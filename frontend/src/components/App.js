@@ -12,6 +12,12 @@ export default class App extends Component {
   constructor(props) {
     super(props);
 
+    this.duration_type = {
+      'short': '0 - 30min',
+      'medium': '31 - 45 min',
+      'long': '46 - 60 min',
+    };
+
     this.state = {
       description: '',
       duration: 'short',
@@ -108,9 +114,9 @@ export default class App extends Component {
                 value={this.state.duration}
                 onChange={this.handleDurationChange}
               >
-                <option value={'short'}>0 - 30 min</option>
-                <option value={'medium'}>31 - 45 min</option>
-                <option value={'long'}>46 - 60 min</option>
+                {Object.entries(this.duration_type).map(([key, value]) => 
+                  <option value={key}>{ value }</option>
+                )}
               </Form.Control>
             </Col>
             <Col xs={2}>
@@ -161,7 +167,7 @@ export default class App extends Component {
                     <tr key={`task-${i + 1}`}>
                       <td>{ i + 1 }</td>
                       <td>{ task.description }</td>
-                      <td className="text-center">{ task.duration }</td>
+                      <td className="text-center">{ this.duration_type[task.duration] }</td>
                       <td className="text-center">
                         { task.status ?
                           <Icon className="material-icons-outlined mr-2">task_alt</Icon> :
