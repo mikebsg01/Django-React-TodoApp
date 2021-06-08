@@ -1,11 +1,18 @@
 import React, { Component } from "react";
 import { render } from "react-dom";
+
+// Axios Library (AJAX)
+import axios from 'axios';
+
+// React-Bootstrap Components
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import Form from 'react-bootstrap/Form';
 import Table from 'react-bootstrap/Table';
 import Button from 'react-bootstrap/Button';
+
+// Material UI Icons
 import Icon from '@material-ui/core/Icon';
 
 export default class App extends Component {
@@ -57,24 +64,6 @@ export default class App extends Component {
     });
   }
 
-  handleTaskSubmit(event) {
-    event.preventDefault();
-
-    this.setState(prevState => ({
-      tasks: [
-        ...prevState.tasks,
-        {
-          description: this.state.description,
-          duration: this.state.duration,
-          status: this.state.status,
-          recorded_time: this.state.recorded_time
-        }
-      ]
-    }));
-
-    this.clearCurrentTask();
-  }
-
   clearCurrentTask() {
     this.setState({
       description: '',
@@ -84,8 +73,63 @@ export default class App extends Component {
     });
   }
 
+  addTask(task) {
+    this.setState(prevState => ({
+      tasks: [
+        task,
+        ...prevState.tasks
+      ]
+    }));
+  }
+
+  handleTaskSubmit(event) {
+    event.preventDefault();
+
+    let task = {
+      description: this.state.description,
+      duration: this.state.duration,
+      status: this.state.status,
+      recorded_time: this.state.recorded_time
+    };
+
+    axios.post(`http://localhost:8000/api/tasks/`, task)
+      .then(response => {
+        task = response.data;
+        this.addTask(task);
+      });
+
+    this.clearCurrentTask();
+  }
+
+  deleteTask(taskId) {
+    this.setState(prevState => ({
+      tasks: [
+        ...prevState.tasks.filter(task => task.id !== taskId)
+      ]
+    }));
+  }
+
+  handleTaskDelete(taskId) {
+    axios.delete(`http://localhost:8000/api/tasks/${taskId}`)
+      .then(response => {
+        this.deleteTask(taskId);
+      });
+  }
+
   componentDidMount() {
-      window.console.log('[Console] It works properly! :) 3');
+    axios.get('http://localhost:8000/api/tasks/')
+      .then(
+        (response) => {
+          let tasks = response.data.results;
+
+          this.setState({
+            tasks
+          });
+        },
+        (error) => {
+          window.console.error('Error:', error);
+        }
+      );
   }
 
   render() {
@@ -115,7 +159,7 @@ export default class App extends Component {
                 onChange={this.handleDurationChange}
               >
                 {Object.entries(this.duration_type).map(([key, value]) => 
-                  <option value={key}>{ value }</option>
+                  <option key={key} value={key}>{ value }</option>
                 )}
               </Form.Control>
             </Col>
@@ -154,7 +198,6 @@ export default class App extends Component {
               <Table className="mt-5" striped bordered hover>
                 <thead>
                   <tr>
-                    <th>#</th>
                     <th>Description</th>
                     <th className="text-center">Duration</th>
                     <th className="text-center">Status</th>
@@ -163,9 +206,8 @@ export default class App extends Component {
                   </tr>
                 </thead>
                 <tbody>
-                  {this.state.tasks.map((task, i) => 
-                    <tr key={`task-${i + 1}`}>
-                      <td>{ i + 1 }</td>
+                  {this.state.tasks.map((task) => 
+                    <tr key={`task-${task.id}`}>
                       <td>{ task.description }</td>
                       <td className="text-center">{ this.duration_type[task.duration] }</td>
                       <td className="text-center">
@@ -179,7 +221,7 @@ export default class App extends Component {
                         <Button variant="outline-primary" size="sm">
                           <Icon>edit</Icon>
                         </Button>
-                        <Button variant="outline-danger" size="sm" className="ml-2">
+                        <Button onClick={this.handleTaskDelete.bind(this, task.id)} variant="outline-danger" size="sm" className="ml-2">
                           <Icon>delete</Icon>
                         </Button>
                       </td>
